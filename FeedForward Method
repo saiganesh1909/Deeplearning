@@ -1,0 +1,238 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# Step By Step analysis of Feedforward method with simple example:
+# 
+# First step:
+# 
+# instailzing the weights with some random variables in our case we are
+# going to take w0,w1,w2 we have to genrate these three weights with
+# numpy.random variable and store on that three variables.
+# 
+# 
+# Second step:
+# 
+# In this step we have to genrate the input into data which means input
+# x_input with the same numpy.random.rand()
+# 
+# 
+# 
+# Thrid step:
+# In this step we have declare the feedforward method before that we have to
+# declare activation function like sigmoid = 1/exp(-x) then we have to do dot
+# product between weights and input then we to pass into to activation function.
+# 
+# fourth step:
+# In this step we have to caluclate loss function and also implemete the backpropogation 
+# and reclaulcate the weights
+# we are going to repeat the this steps upto to we reduce the loss function.
+
+# ### numpy function declaration
+
+# In[3]:
+
+
+import numpy as np
+
+#importing the numpy for genrating the data and perform some dot products 
+
+
+# In[ ]:
+
+
+
+
+
+# ## init_weights() function implementation
+
+# In[15]:
+
+
+#This function should randomly initialize the neural network’s weights using the
+#normal distribution. It should return the weight matrices W0, W1, and W2 for the
+#input-to-hidden, hidden-to-hidden, and hidden-to-output layers, respectively. The
+#number of input, hidden, and output units should be passed as arguments to the
+#function
+def init_weights(n_inputs, n_hidden, n_output):
+    W0 = np.random.randn(n_inputs + 1, n_hidden)
+    W1 = np.random.randn(n_hidden + 1, n_hidden)
+    W2 = np.random.randn(n_hidden + 1, n_output)
+    return W0, W1, W2
+
+
+# 
+
+# In[17]:
+
+
+#to test the above function
+
+
+# In[18]:
+
+
+init_weights(2,2,1)
+
+
+# ## Activation function
+
+# In[10]:
+
+
+#activation function which are to activate hidden layers and incubate the non-linearity in the functions 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+# ###  feedforward() function implementation
+
+# In[19]:
+
+
+#This function should implement the feedforward operation of the neural network. Itshould
+#take as input an example x and the weight matrices W0, W1, and W2, and return the preactivations z0, z1, and z2, and the activations a0, a1, and a2 for the input, hidden, and
+#output layers, respectively. The feedforward operation should consist of matrix
+#multiplications and pointwise application of the non-linear function f, which can be
+#chosen as the sigmoid function.
+
+def feedforward(x, W0, W1, W2):
+    a0 = x
+    z1 = np.dot(a0, W0)
+    a1 = sigmoid(z1)
+    a1 = np.concatenate((a1, np.ones((a1.shape[0], 1))), axis=1)
+    z2 = np.dot(a1, W1)
+    a2 = sigmoid(z2)
+    a2 = np.concatenate((a2, np.ones((a2.shape[0], 1))), axis=1)
+    z3 = np.dot(a2, W2)
+    a3 = sigmoid(z3)
+    return z1, z2, z3, a0, a1, a2, a3
+
+
+# In[20]:
+
+
+#just to test the above function
+x_sample = np.random.randn(1, 11)
+z1, z2, z3, a0, a1, a2, a3 = feedforward(x_sample, W0, W1, W2)
+a3
+
+
+# ## implementation of predict function
+
+# In[22]:
+
+
+#This function should take as input an example x and the weight matrices W0, W1, and
+#W2and return the prediction of the neural network for that example. This can be done
+#by passing the example x through the feedforward operation and returning the network’s
+#output.
+
+
+# In[24]:
+
+
+def predict(x, W0, W1, W2):
+    _, _, _, _, _, _, a3 = feedforward(x, W0, W1, W2)
+    return a3
+
+
+# In[ ]:
+
+
+
+
+
+# ## implematation of train method
+
+# In[34]:
+
+
+#loss function implementation which are 
+def loss(Y_pred, Y):
+    m = Y.shape[0]
+    loss = (1 / (2 * m)) * np.sum((Y_pred - Y) ** 2)
+    return loss
+
+
+# In[36]:
+
+
+#implementing of backpropogation
+#first we have to caluclate derivative "dw"
+
+
+def backprop(X_train, Y_train, W0, W1, W2, learning_rate):
+    m = X_train.shape[0]
+    z1, z2, z3, a0, a1, a2, a3 = feedforward(X_train, W0, W1, W2)
+    dZ3 = a3 - Y_train
+    dW2 = (1 / m) * np.dot(a2.T, dZ3)
+    dZ2 = np.dot(dZ3, W2.T) * (a2 * (1 - a2))
+    dZ2 = dZ2[:, :-1]
+    dW1 = (1 / m) * np.dot(a1.T, dZ2)
+    dZ1 = np.dot(dZ2, W1.T) * (a1 * (1 - a1))
+    dZ1 = dZ1[:, :-1]  # Remove the bias term
+    dW0 = (1 / m) * np.dot(a0.T, dZ1)
+    W0 -= learning_rate * dW0
+    W1 -= learning_rate * dW1
+    W2 -= learning_rate * dW2
+    return W0, W1, W2
+
+
+# In[41]:
+
+
+#This function should train the neural network using the training data X_train and Y_train.
+#The number of input, hidden, and output units should be passed as arguments, along with
+#the number of training epochs and the learning rate. The function should return the trained
+#weight matrices W0, W1, and W2.
+#learning_rate which means step size 
+
+def train(X_train, Y_train, n_inputs, n_hidden, n_output, n_epochs, learning_rate):
+    W0, W1, W2 = init_weights(n_inputs, n_hidden, n_output)
+    for epoch in range(n_epochs):
+        W0, W1, W2 = backprop(X_train, Y_train, W0, W1, W2, learning_rate)
+        if epoch %  20==0:
+            y_pred = predict(X_train, W0, W1, W2)
+            current_loss = loss(y_pred, Y_train)
+            print(f"Epoch {epoch} and Ls: {current_loss:.4f}")
+    return W0, W1, W2
+
+
+# In[42]:
+
+
+# Test the training function using the sample data provided in the problem
+n_samples = 1000
+n_inputs = 10
+n_hidden = 5
+n_output = 3
+X_train = np.random.randn(n_samples, 10)
+b = np.ones((X_train.shape[0], 1))
+X_train = np.concatenate((X_train, b), axis=1)
+
+# Generate random class labels for Y_train (0 or 1)
+Y_train = np.zeros((n_samples, n_output), dtype=int)
+for i in range(n_samples):
+    random_idx = np.random.randint(n_output)
+    Y_train[i, random_idx] = 1
+
+# Train the network
+W0, W1, W2 = train(X_train, Y_train, n_inputs, n_hidden, n_output, n_epochs=100, learning_rate=0.1)
+
+
+# # predict the values
+
+# In[44]:
+
+
+#test the above function
+x_test = np.random.randn(1, 11)
+y_pred = predict(x_test, W0, W1, W2)
+y_pred
+
+
+# In[ ]:
+
+
+#
+
